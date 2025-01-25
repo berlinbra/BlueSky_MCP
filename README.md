@@ -1,13 +1,13 @@
-# Alpha Vantage MCP Server
+# BlueSky MCP Server
 
-A Model Context Protocol (MCP) server that provides real-time access to financial market data through the free [Alpha Vantage API](https://www.alphavantage.co/documentation/). This server implements a standardized interface for retrieving stock quotes and company information.
+A Model Context Protocol (MCP) server that provides access to [BlueSky](https://bsky.app) social network data through its official API. This server implements a standardized interface for retrieving user profiles and social graph information.
 
 ## Features
 
-- Real-time stock quotes with price, volume, and change data
-- Detailed company information including sector, industry, and market cap
-- Real-time cryptocurrency exchange rates with bid/ask prices
-- Built-in error handling and rate limit management
+- Fetch detailed user profile information
+- Retrieve user following lists with pagination
+- Built-in authentication handling and session management
+- Comprehensive error handling
 
 ## Installation
 
@@ -16,125 +16,116 @@ A Model Context Protocol (MCP) server that provides real-time access to financia
 - On MacOS: `~/Library/Application\ Support/Claude/claude_desktop_config.json`
 - On Windows: `%APPDATA%/Claude/claude_desktop_config.json`
 
+<details>
 <summary>Development/Unpublished Servers Configuration</summary>
 
 ```json
     "mcpServers": {
-        "alpha-vantage-mcp": {
+        "bluesky-mcp": {
             "command": "uv",
             "args": [
             "--directory",
-            "/Users/{INSERT_USER}/YOUR/PATH/TO/alpha-vantage-mcp",
+            "/Users/{INSERT_USER}/YOUR/PATH/TO/bluesky-mcp",
             "run",
-            "alpha-vantage-mcp"
+            "bluesky-mcp"
             ],
             "env": {
-                "ALPHA_VANTAGE_API_KEY": "<insert api key>"
+                "BLUESKY_IDENTIFIER": "your.handle.bsky.social",
+                "BLUESKY_APP_PASSWORD": "your-app-password"
             }
         }
     }
 ```
-
+</details>
 
 ### Running Locally
 After connecting Claude client with the MCP tool via json file, run the server:
-In alpha-vantage-mcp repo: `uv run src/alpha_vantage_mcp/server.py`
+In bluesky-mcp repo: `uv run src/bluesky_mcp/server.py`
 
 ## Available Tools
 
-The server implements three tools:
-- `get-stock-quote`: Get the latest stock quote for a specific company
-- `get-company-info`: Get stock-related information for a specific company
-- `get-crypto-exchange-rate`: Get current cryptocurrency exchange rates
+The server implements two tools:
+- `get-profile`: Get detailed profile information for a BlueSky user
+- `get-follows`: Get a list of accounts that a specified user follows
 
-### get-stock-quote
+### get-profile
+
+Retrieves detailed profile information for a given BlueSky user.
 
 **Input Schema:**
 ```json
 {
-    "symbol": {
+    "handle": {
         "type": "string",
-        "description": "Stock symbol (e.g., AAPL, MSFT)"
+        "description": "The user's handle (e.g., 'alice.bsky.social')"
     }
 }
 ```
 
 **Example Response:**
 ```
-Stock quote for AAPL:
+Profile information for alice.bsky.social:
 
-Price: $198.50
-Change: $2.50 (+1.25%)
-Volume: 58942301
-High: $199.62
-Low: $197.20
+Handle: alice.bsky.social
+Display Name: Alice
+Description: Just a BlueSky user sharing thoughts
+Followers: 1234
+Following: 567
+Posts: 789
 ```
 
-### get-company-info
+### get-follows
 
-Retrieves detailed company information for a given symbol.
+Retrieves a list of accounts that a specified user follows, with support for pagination.
 
 **Input Schema:**
 ```json
 {
-    "symbol": {
+    "actor": {
         "type": "string",
-        "description": "Stock symbol (e.g., AAPL, MSFT)"
-    }
-}
-```
-
-**Example Response:**
-```
-Company information for AAPL:
-
-Name: Apple Inc
-Sector: Technology
-Industry: Consumer Electronics
-Market Cap: $3000000000000
-Description: Apple Inc. designs, manufactures, and markets smartphones...
-Exchange: NASDAQ
-Currency: USD
-```
-
-### get-crypto-exchange-rate
-
-Retrieves real-time cryptocurrency exchange rates with additional market data.
-
-**Input Schema:**
-```json
-{
-    "crypto_symbol": {
-        "type": "string",
-        "description": "Cryptocurrency symbol (e.g., BTC, ETH)"
+        "description": "The user's handle (e.g., 'alice.bsky.social')"
     },
-    "market": {
+    "limit": {
+        "type": "integer",
+        "description": "Maximum number of results to return",
+        "default": 50,
+        "minimum": 1,
+        "maximum": 100
+    },
+    "cursor": {
         "type": "string",
-        "description": "Market currency (e.g., USD, EUR)",
-        "default": "USD"
+        "description": "Pagination cursor",
+        "optional": true
     }
 }
 ```
 
 **Example Response:**
 ```
-Cryptocurrency exchange rate for BTC/USD:
+Follows for alice.bsky.social:
 
-From: Bitcoin (BTC)
-To: United States Dollar (USD)
-Exchange Rate: 43521.45000
-Last Updated: 2024-12-17 19:45:00 UTC
-Bid Price: 43521.00000
-Ask Price: 43522.00000
+Follows:
+Handle: bob.bsky.social
+Display Name: Bob
+---
+Handle: carol.bsky.social
+Display Name: Carol
+---
+Handle: dave.bsky.social
+Display Name: Dave
+---
+
+More results available. Use cursor: bafygeia...
 ```
 
 ## Error Handling
 
 The server includes comprehensive error handling for various scenarios:
 
-- Rate limit exceeded
-- Invalid API key
+- Authentication failures
+- Rate limiting
 - Network connectivity issues
+- Invalid parameters
 - Timeout handling
 - Malformed responses
 
@@ -145,6 +136,15 @@ Error messages are returned in a clear, human-readable format.
 - Python 3.12 or higher
 - httpx
 - mcp
+
+## Authentication
+
+To use this MCP server, you need to:
+1. Create a BlueSky account if you don't have one
+2. Generate an App Password in your BlueSky account settings
+3. Set the following environment variables:
+   - `BLUESKY_IDENTIFIER`: Your BlueSky handle (e.g., "username.bsky.social")
+   - `BLUESKY_APP_PASSWORD`: Your generated App Password
 
 ## Contributing
 
