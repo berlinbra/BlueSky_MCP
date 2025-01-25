@@ -12,5 +12,8 @@ dependencies = [
     "pydantic>=2.0.0"
 ]
 
+[project.scripts]
+bluesky-mcp = "bluesky_mcp.server:main"
+
 [tool.hatch.build.targets.wheel]
 packages = ["src/bluesky_mcp"]
