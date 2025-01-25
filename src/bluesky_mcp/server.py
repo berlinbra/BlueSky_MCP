@@ -11,8 +11,8 @@ import mcp.server.stdio
 API_KEY = os.getenv('BLUESKY_APP_PASSWORD')
 IDENTIFIER = os.getenv('BLUESKY_IDENTIFIER')
 
-if not API_KEY or not IDENTIFIER:
-    raise ValueError("BLUESKY_APP_PASSWORD and BLUESKY_IDENTIFIER must be set")
+# if not API_KEY or not IDENTIFIER:
+#     raise ValueError("BLUESKY_APP_PASSWORD and BLUESKY_IDENTIFIER must be set")
 
 server = Server("bluesky_social")
 
