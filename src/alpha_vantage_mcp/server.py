@@ -6,6 +6,7 @@ import mcp.types as types
 from mcp.server import NotificationOptions, Server
 import mcp.server.stdio
 import os
+import json
 
 BLUESKY_BASE = "https://bsky.social/xrpc/"
 API_KEY = os.getenv('BLUESKY_APP_PASSWORD')
@@ -15,6 +16,85 @@ if not API_KEY or not IDENTIFIER:
     raise ValueError("Missing BLUESKY_APP_PASSWORD or BLUESKY_IDENTIFIER environment variables")
 
 server = Server("bluesky_social")
+
+class BlueSkySession:
+    def __init__(self):
+        self.jwt = None
+        self.did = None
+        self.headers = {
+            "Accept": "application/json",
+            "Content-Type": "application/json"
+        }
+
+    async def ensure_auth(self, client: httpx.AsyncClient) -> None:
+        """Ensure we have a valid authentication token"""
+        if not self.jwt:
+            try:
+                auth_data = {
+                    "identifier": IDENTIFIER,
+                    "password": API_KEY
+                }
+                
+                response = await client.post(
+                    f"{BLUESKY_BASE}com.atproto.server.createSession",
+                    headers=self.headers,
+                    json=auth_data
+                )
+                
+                if response.status_code == 400:
+                    error_data = response.json()
+                    error_message = error_data.get('message', 'Unknown authentication error')
+                    print(f"Authentication error: {error_message}")
+                    raise ValueError(f"Authentication failed: {error_message}")
+                
+                response.raise_for_status()
+                auth_response = response.json()
+                
+                self.jwt = auth_response.get('accessJwt')
+                self.did = auth_response.get('did')
+                
+                if not self.jwt or not self.did:
+                    raise ValueError("Invalid authentication response")
+                
+                self.headers["Authorization"] = f"Bearer {self.jwt}"
+                
+            except httpx.HTTPError as e:
+                print(f"HTTP error during authentication: {str(e)}")
+                raise
+            except Exception as e:
+                print(f"Unexpected error during authentication: {str(e)}")
+                raise
+
+async def make_bluesky_request(session: BlueSkySession, client: httpx.AsyncClient, endpoint: str, params: dict = None) -> dict[str, Any] | str:
+    """Make an authenticated request to the BlueSky API with proper error handling."""
+    try:
+        await session.ensure_auth(client)
+        
+        response = await client.get(
+            f"{BLUESKY_BASE}{endpoint}",
+            headers=session.headers,
+            params=params,
+            timeout=30.0
+        )
+        
+        if response.status_code == 429:
+            return "Rate limit exceeded. Please try again later."
+        elif response.status_code == 401:
+            # Clear the JWT so we'll reauthenticate on the next request
+            session.jwt = None
+            return "Authentication failed. Please try again."
+        
+        response.raise_for_status()
+        return response.json()
+        
+    except httpx.TimeoutException:
+        return "Request timed out after 30 seconds."
+    except httpx.ConnectError:
+        return "Failed to connect to BlueSky API. Please check your internet connection."
+    except httpx.HTTPStatusError as e:
+        return f"HTTP error occurred: {str(e)} - Response: {e.response.text}"
+    except Exception as e:
+        return f"Unexpected error occurred: {str(e)}"
 
 @server.list_tools()
 async def handle_list_tools() -> list[types.Tool]:
@@ -64,66 +144,19 @@ async def handle_list_tools() -> list[types.Tool]:
         ),
     ]
 
-class BlueSkySession:
-    def __init__(self):
-        self.session = None
-        self.jwt = None
-        self.refresh_jwt = None
-
-    async def ensure_auth(self, client: httpx.AsyncClient) -> None:
-        """Ensure we have a valid authentication token"""
-        if not self.jwt:
-            response = await client.post(
-                f"{BLUESKY_BASE}com.atproto.server.createSession",
-                json={
-                    "identifier": IDENTIFIER,
-                    "password": API_KEY
-                }
-            )
-            response.raise_for_status()
-            auth_data = response.json()
-            self.jwt = auth_data['accessJwt']
-            self.refresh_jwt = auth_data['refreshJwt']
-
-async def make_bluesky_request(client: httpx.AsyncClient, endpoint: str, params: dict = None, session: BlueSkySession = None) -> dict[str, Any] | str:
-    """Make an authenticated request to the BlueSky API with proper error handling."""
-    if session:
-        await session.ensure_auth(client)
-        client.headers["Authorization"] = f"Bearer {session.jwt}"
-
-    try:
-        response = await client.get(
-            f"{BLUESKY_BASE}{endpoint}",
-            params=params,
-            timeout=30.0
-        )
-        
-        if response.status_code == 429:
-            return "Rate limit exceeded. Please try again later."
-        elif response.status_code == 401:
-            return "Authentication failed. Please check your credentials."
-        
-        response.raise_for_status()
-        return response.json()
-    except httpx.TimeoutException:
-        return "Request timed out after 30 seconds."
-    except httpx.ConnectError:
-        return "Failed to connect to BlueSky API. Please check your internet connection."
-    except httpx.HTTPStatusError as e:
-        return f"HTTP error occurred: {str(e)} - Response: {e.response.text}"
-    except Exception as e:
-        return f"Unexpected error occurred: {str(e)}"
-
 def format_profile(profile_data: dict) -> str:
     """Format profile data into a concise string."""
     try:
+        if not isinstance(profile_data, dict):
+            return "Invalid profile data received"
+            
         return (
-            f"Handle: {profile_data.get('handle', 'N/A')}\\n"
-            f"Display Name: {profile_data.get('displayName', 'N/A')}\\n"
-            f"Description: {profile_data.get('description', 'N/A')}\\n"
-            f"Followers: {profile_data.get('followersCount', 0)}\\n"
-            f"Following: {profile_data.get('followsCount', 0)}\\n"
-            f"Posts: {profile_data.get('postsCount', 0)}\\n"
+            f"Handle: {profile_data.get('handle', 'N/A')}\n"
+            f"Display Name: {profile_data.get('displayName', 'N/A')}\n"
+            f"Description: {profile_data.get('description', 'N/A')}\n"
+            f"Followers: {profile_data.get('followersCount', 0)}\n"
+            f"Following: {profile_data.get('followsCount', 0)}\n"
+            f"Posts: {profile_data.get('postsCount', 0)}\n"
             "---"
         )
     except Exception as e:
@@ -139,16 +172,16 @@ def format_follows(follows_data: dict) -> str:
         formatted = ["Follows:"]
         for follow in follows:
             formatted.append(
-                f"Handle: {follow.get('handle', 'N/A')}\\n"
-                f"Display Name: {follow.get('displayName', 'N/A')}\\n"
-                f"---"
+                f"Handle: {follow.get('handle', 'N/A')}\n"
+                f"Display Name: {follow.get('displayName', 'N/A')}\n"
+                "---"
             )
         
         cursor = follows_data.get("cursor")
         if cursor:
-            formatted.append(f"\\nMore results available. Use cursor: {cursor}")
+            formatted.append(f"\nMore results available. Use cursor: {cursor}")
             
-        return "\\n".join(formatted)
+        return "\n".join(formatted)
     except Exception as e:
         return f"Error formatting follows data: {str(e)}"
 
@@ -172,17 +205,17 @@ async def handle_call_tool(
 
         async with httpx.AsyncClient() as client:
             profile_data = await make_bluesky_request(
+                session,
                 client,
                 "app.bsky.actor.getProfile",
-                {"actor": handle},
-                session
+                {"actor": handle}
             )
 
             if isinstance(profile_data, str):
                 return [types.TextContent(type="text", text=f"Error: {profile_data}")]
 
             formatted_profile = format_profile(profile_data)
-            profile_text = f"Profile information for {handle}:\\n\\n{formatted_profile}"
+            profile_text = f"Profile information for {handle}:\n\n{formatted_profile}"
 
             return [types.TextContent(type="text", text=profile_text)]
 
@@ -203,17 +236,17 @@ async def handle_call_tool(
 
         async with httpx.AsyncClient() as client:
             follows_data = await make_bluesky_request(
+                session,
                 client,
                 "app.bsky.graph.getFollows",
-                params,
-                session
+                params
             )
 
             if isinstance(follows_data, str):
                 return [types.TextContent(type="text", text=f"Error: {follows_data}")]
 
             formatted_follows = format_follows(follows_data)
-            follows_text = f"Follows for {actor}:\\n\\n{formatted_follows}"
+            follows_text = f"Follows for {actor}:\n\n{formatted_follows}"
 
             return [types.TextContent(type="text", text=follows_text)]
     else:
