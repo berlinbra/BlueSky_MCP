@@ -1,15 +1,21 @@
-[build-system]
-requires = ["hatchling"]
-build-backend = "hatchling.build"
 
 [project]
 name = "bluesky_mcp"
 version = "0.1.0"
 requires-python = ">=3.12"
 dependencies = [
-    "mcp",
-    "atproto"
+    "mcp>=0.1.0",
+    "atproto>=0.0.47",
+    "pydantic>=2.0.0"
 ]
 
-[tool.hatch.build.targets.wheel]
-packages = ["src/bluesky_mcp"]
+[build-system]
+requires = [ "hatchling",]
+build-backend = "hatchling.build"
+
+[project.scripts]
+bluesky-mcp = "bluesky_mcp:main"
+
+[[project.authors]]
+name = "berlinbra"
+email = "BMBpsn@gmail.com"
