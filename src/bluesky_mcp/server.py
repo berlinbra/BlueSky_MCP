@@ -2,7 +2,7 @@ from typing import Any
 import asyncio
 import json
 import os
-from atproto import Client, models
+from atproto import Client
 from mcp.server.models import InitializationOptions
 import mcp.types as types
 from mcp.server import NotificationOptions, Server
@@ -196,19 +196,17 @@ async def handle_call_tool(
     try:
         if name == "bluesky_get_profile":
             response = await asyncio.to_thread(
-                bluesky.client.app.bsky.actor.getProfile,
+                bluesky.client.app.bsky.actor.get_profile,
                 {'actor': IDENTIFIER}
             )
-            data = response.model_dump()
 
         elif name == "bluesky_get_posts":
             limit = arguments.get("limit", 50)
             cursor = arguments.get("cursor")
             response = await asyncio.to_thread(
-                bluesky.client.app.bsky.feed.getAuthorFeed,
+                bluesky.client.app.bsky.feed.get_author_feed,
                 {'actor': IDENTIFIER, 'limit': limit, 'cursor': cursor}
             )
-            data = response.model_dump()
 
         elif name == "bluesky_search_posts":
             query = arguments.get("query")
@@ -217,46 +215,41 @@ async def handle_call_tool(
             limit = arguments.get("limit", 25)
             cursor = arguments.get("cursor")
             response = await asyncio.to_thread(
-                bluesky.client.app.bsky.feed.searchPosts,
+                bluesky.client.app.bsky.feed.search_posts,
                 {'q': query, 'limit': limit, 'cursor': cursor}
             )
-            data = response.model_dump()
 
         elif name == "bluesky_get_follows":
             limit = arguments.get("limit", 50)
             cursor = arguments.get("cursor")
             response = await asyncio.to_thread(
-                bluesky.client.app.bsky.graph.getFollows,
+                bluesky.client.app.bsky.graph.get_follows,
                 {'actor': IDENTIFIER, 'limit': limit, 'cursor': cursor}
             )
-            data = response.model_dump()
 
         elif name == "bluesky_get_followers":
             limit = arguments.get("limit", 50)
             cursor = arguments.get("cursor")
             response = await asyncio.to_thread(
-                bluesky.client.app.bsky.graph.getFollowers,
+                bluesky.client.app.bsky.graph.get_followers,
                 {'actor': IDENTIFIER, 'limit': limit, 'cursor': cursor}
             )
-            data = response.model_dump()
 
         elif name == "bluesky_get_liked_posts":
             limit = arguments.get("limit", 50)
             cursor = arguments.get("cursor")
             response = await asyncio.to_thread(
-                bluesky.client.app.bsky.feed.getActorLikes,
-                {'actor': IDENTIFIER, 'limit': limit, 'cursor': cursor}
+                bluesky.client.app.bsky.feed.get_likes,
+                {'uri': IDENTIFIER, 'limit': limit, 'cursor': cursor}
             )
-            data = response.model_dump()
 
         elif name == "bluesky_get_personal_feed":
             limit = arguments.get("limit", 50)
             cursor = arguments.get("cursor")
             response = await asyncio.to_thread(
-                bluesky.client.app.bsky.feed.getTimeline,
+                bluesky.client.app.bsky.feed.get_timeline,
                 {'limit': limit, 'cursor': cursor}
             )
-            data = response.model_dump()
 
         elif name == "bluesky_search_profiles":
             query = arguments.get("query")
@@ -265,15 +258,14 @@ async def handle_call_tool(
             limit = arguments.get("limit", 25)
             cursor = arguments.get("cursor")
             response = await asyncio.to_thread(
-                bluesky.client.app.bsky.actor.searchActors,
-                {'q': query, 'limit': limit, 'cursor': cursor}
+                bluesky.client.app.bsky.actor.search_actors,
+                {'term': query, 'limit': limit, 'cursor': cursor}
             )
-            data = response.model_dump()
 
         else:
             return [types.TextContent(type="text", text=f"Unknown tool: {name}")]
 
-        return [types.TextContent(type="text", text=json.dumps(data, indent=2))]
+        return [types.TextContent(type="text", text=json.dumps(response.model_dump(), indent=2))]
 
     except Exception as e:
         return [types.TextContent(type="text", text=f"Error: {str(e)}")]
