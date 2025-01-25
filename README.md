@@ -11,6 +11,8 @@ A Model Context Protocol (MCP) server that provides access to [BlueSky](https://
 
 ## Installation
 
+
+
 #### Claude Desktop
 
 - On MacOS: `~/Library/Application\ Support/Claude/claude_desktop_config.json`
@@ -39,8 +41,15 @@ A Model Context Protocol (MCP) server that provides access to [BlueSky](https://
 </details>
 
 ### Running Locally
+
+#### Install Libraries
+`uv pip install -e .`
+
+#### Run Server
 After connecting Claude client with the MCP tool via json file, run the server:
 In bluesky-mcp repo: `uv run src/bluesky_mcp/server.py`
+
+*if you want to run the server inspector along with the server: ` npx @modelcontextprotocol/inspector uv --directory /Users/{INSERT_USER}/YOUR/PATH/TO/bluesky-mcp run src/bluesky_mcp/server.py `
 
 ## Available Tools
 
