@@ -15,3 +15,7 @@ build-backend = "hatchling.build"
 
 [project.scripts]
 bluesky-mcp = "bluesky_mcp:main"
+
+[[project.authors]]
+name = "berlinbra"
+email = "BMBpsn@gmail.com"
