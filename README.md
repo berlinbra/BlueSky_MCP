@@ -47,9 +47,14 @@ A Model Context Protocol (MCP) server that provides access to [BlueSky](https://
 uv pip install -e .
 ```
 
-#### Run Server
-After connecting Claude client with the MCP tool via json file, run the server:
-In bluesky-mcp repo: `uv run src/bluesky_mcp/server.py`
+### Running 
+After connecting Claude client with the MCP tool via json file and installing the packages, Claude should see the server's mcp tools:
+
+You can run the sever yourself via:
+In bluesky_mcp repo: 
+```
+uv run src/bluesky_mcp/server.py
+```
 
 *if you want to run the server inspector along with the server: 
 ```
