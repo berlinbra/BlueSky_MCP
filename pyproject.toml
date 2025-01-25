@@ -7,8 +7,9 @@ name = "bluesky_mcp"
 version = "0.1.0"
 requires-python = ">=3.12"
 dependencies = [
-    "mcp",
-    "atproto"
+    "mcp>=0.1.0",
+    "atproto>=0.0.47",
+    "pydantic>=2.0.0"
 ]
 
 [tool.hatch.build.targets.wheel]
