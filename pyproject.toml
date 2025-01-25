@@ -1,0 +1,17 @@
+[project]
+name = "alpha-vantage-mcp"
+version = "0.1.0"
+description = "Add your description here"
+readme = "README.md"
+requires-python = ">=3.12"
+dependencies = [
+    "httpx>=0.28.1",
+    "mcp>=1.1.2",
+]
+
+[build-system]
+requires = [ "hatchling",]
+build-backend = "hatchling.build"
+
+[project.scripts]
+alpha-vantage-mcp = "alpha_vantage_mcp:main"
