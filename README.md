@@ -2,6 +2,8 @@
 
 A Model Context Protocol (MCP) server that provides access to [BlueSky](https://bsky.app) social network data through its official API. This server implements a standardized interface for retrieving user profiles and social graph information.
 
+<a href="https://glama.ai/mcp/servers/bxvvsqt34k"><img width="380" height="200" src="https://glama.ai/mcp/servers/bxvvsqt34k/badge" alt="BlueSky Server MCP server" /></a>
+
 ## Features
 
 - Fetch detailed user profile information
