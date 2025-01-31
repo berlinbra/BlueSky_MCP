@@ -29,7 +29,7 @@ A Model Context Protocol (MCP) server that provides access to [BlueSky](https://
             "command": "uv",
             "args": [
             "--directory",
-            "/Users/{INSERT_USER}/YOUR/PATH/TO/bluesky-mcp",
+            "C:\\Users\\{INSERT_USER}\\YOUR\\PATH\\TO\\bluesky-mcp\\bluesky-mcp",
             "run",
             "src/bluesky_mcp/bluesky-mcp"
             ],
@@ -60,7 +60,7 @@ uv run src/bluesky_mcp/server.py
 
 *if you want to run the server inspector along with the server: 
 ```
-npx @modelcontextprotocol/inspector uv --directory C:\\Users\\psnbm\\Desktop\\code\\bluesky-mcp run src/bluesky_mcp/server.py
+npx @modelcontextprotocol/inspector uv --directory C:\\Users\\{INSERT_USER}\\YOUR\\PATH\\TO\\bluesky-mcp run src/bluesky_mcp/server.py
 ```
 
 ## Available Tools
